@@ -107,7 +107,7 @@ class MegaEnergyCRM(ctk.CTk):
         super().__init__()
         self.title("MEGA ENERGY CRM")
         self.geometry("1450x900")
-        ctk.CTkLabel(self, text="Version 1.0.0").pack()
+        ctk.CTkLabel(self, text="Version 1.0.1").pack()
         
         self.df = None
         self.filtered_df = pd.DataFrame()
