@@ -7,13 +7,9 @@ import threading
 import sys
 import os
 
-# --- 1. ΑΛΛΑΓΗ: Χρήση pathos αντί για το απλό multiprocessing ---
-# Αυτό επιτρέπει στη συνάρτηση να "μεταφέρεται" σωστά στους πυρήνες
 try:
     from pathos.multiprocessing import ProcessingPool as Pool
 except ImportError:
-    # Αν δεν υπάρχει το pathos (π.χ. στην πρώτη εκτέλεση), 
-    # θα χρησιμοποιήσει την απλή μέθοδο χωρίς παράλληλη επεξεργασία
     Pool = None
 
 def process_chunk(chunk):
@@ -22,23 +18,19 @@ def process_chunk(chunk):
         date_val = row['Ημ. Δημιουργίας Συμβολαίου']
         if pd.isna(date_val): return pd.NaT
         paketo = str(row.get('Πακέτο', '')).lower()
-        # Έλεγχος για 18 ή 12 μήνες
         months = 18 if "max" in paketo else 12
         return date_val + pd.DateOffset(months=months)
 
-    # Μετατροπή ημερομηνίας
     chunk['Ημ. Δημιουργίας Συμβολαίου'] = pd.to_datetime(chunk['Ημ. Δημιουργίας Συμβολαίου'], dayfirst=True, errors='coerce')
     chunk['expiry_dt'] = chunk.apply(calc_expiry, axis=1)
     chunk['calculated_expiry'] = chunk['expiry_dt'].dt.strftime('%d/%m/%Y').fillna("-")
     return chunk
 
-# --- 2. ΣΗΜΑΝΤΙΚΟ: Monkey patch για τον Launcher ---
 if __name__ != "__main__":
     import __main__
     __main__.process_chunk = process_chunk
 
 class MultiSelectWindow(ctk.CTkToplevel):
-    # (Ο κώδικας της κλάσης παραμένει ίδιος όπως τον έστειλες)
     def __init__(self, parent, title, options, selected_set, callback, is_package=False):
         super().__init__(parent)
         self.title(title)
@@ -99,9 +91,8 @@ class MegaEnergyCRM(ctk.CTk):
         super().__init__()
         self.title("MEGA ENERGY CRM")
         self.geometry("1450x900")
-        ctk.CTkLabel(self, text="Version 1.0.3").pack() # Ενημερωμένη έκδοση
+        ctk.CTkLabel(self, text="Version 1.1.0").pack() # Ενημερωμένη έκδοση
         
-        # (Το υπόλοιπο UI initialization παραμένει ίδιο...)
         self.df = None
         self.filtered_df = pd.DataFrame()
         self.current_page = 0
@@ -189,7 +180,6 @@ class MegaEnergyCRM(ctk.CTk):
             thread.daemon = True
             thread.start()
 
-    # --- 3. ΑΛΛΑΓΗ: Διορθωμένο Threaded Load με Pathos ---
     def threaded_load(self, path):
         try:
             raw_df = pd.read_excel(path) if not path.endswith('.csv') else pd.read_csv(path)
@@ -199,18 +189,15 @@ class MegaEnergyCRM(ctk.CTk):
                 self.after(0, self.reset_load_button)
                 return
 
-            # Χωρισμός σε chunks
             num_cores = os.cpu_count() or 4
             chunks = np.array_split(raw_df, num_cores)
             chunks = [c for c in chunks if not c.empty]
 
-            # Χρήση Pathos Pool (Πολύ πιο σταθερό για EXE)
             if Pool and len(raw_df) > 100:
                 with Pool(processes=len(chunks)) as pool:
                     processed_chunks = pool.map(process_chunk, chunks)
                 final_df = pd.concat(processed_chunks, ignore_index=True)
             else:
-                # Fallback αν δεν υπάρχει το pathos ή το αρχείο είναι μικρό
                 final_df = process_chunk(raw_df)
 
             self.after(0, lambda: self.finalize_load(final_df))
@@ -219,7 +206,6 @@ class MegaEnergyCRM(ctk.CTk):
             self.after(0, lambda: messagebox.showerror("Error", f"Σφάλμα Multiprocessing: {str(e)}"))
             self.after(0, self.reset_load_button)
 
-    # (Οι υπόλοιπες μέθοδοι apply_filters, render_page κλπ παραμένουν ίδιες)
     def finalize_load(self, df):
         self.df = df
         if "Όνομα Πελάτη" in self.df.columns:
@@ -291,12 +277,31 @@ class MegaEnergyCRM(ctk.CTk):
             messagebox.showinfo("Success", "Η εξαγωγή ολοκληρώθηκε!")
 
     def render_page(self):
-        for w in self.results_area.winfo_children(): w.destroy()
-        total = len(self.filtered_df)
-        total_pages = max(1, (total // self.page_size) + (1 if total % self.page_size > 0 else 0))
-        page_data = self.filtered_df.iloc[self.current_page*self.page_size:(self.current_page+1)*self.page_size]
-        for _, row in page_data.iterrows(): self.create_card(row)
+        for widget in self.results_area.winfo_children(): 
+            widget.destroy()
+        
+        total_filtered = len(self.filtered_df)
+        
+        total_pages = max(1, (total_filtered // self.page_size) + (1 if total_filtered % self.page_size > 0 else 0))
+        
+        if self.current_page >= total_pages:
+            self.current_page = total_pages - 1
+        if self.current_page < 0:
+            self.current_page = 0
+
+        start_idx = self.current_page * self.page_size
+        end_idx = start_idx + self.page_size
+        page_data = self.filtered_df.iloc[start_idx:end_idx]
+        
+        for _, row in page_data.iterrows(): 
+            self.create_card(row)
+            
         self.page_label.configure(text=f"Σελίδα {self.current_page + 1} από {total_pages}")
+        
+        if total_filtered == 0:
+            self.status_label.configure(text="❌ Δεν βρέθηκαν αποτελέσματα", text_color="firebrick")
+        else:
+            self.status_label.configure(text=f"✅ Εμφανίζονται {total_filtered} εγγραφές (Φιλτραρισμένες)", text_color="#27ae60")
 
     def open_multiselect(self, col, target, title, is_package=False):
         if self.df is None: return
@@ -307,10 +312,9 @@ class MegaEnergyCRM(ctk.CTk):
     def prev_page(self): self.current_page = max(0, self.current_page - 1); self.render_page()
     def add_section_label(self, text, master=None): ctk.CTkLabel(master or self.sidebar, text=text, font=("Arial", 12, "bold"), text_color="#3b8ed0").pack(pady=(15, 2), padx=10, anchor="w")
 
-# --- 4. ΣΗΜΑΝΤΙΚΟ: Εκκίνηση μόνο αν είναι το main ---
 if __name__ == "__main__":
     import multiprocessing
-    multiprocessing.freeze_support() # Κρίσιμο για Windows EXE
+    multiprocessing.freeze_support()
     
     app = MegaEnergyCRM()
     app.mainloop()
