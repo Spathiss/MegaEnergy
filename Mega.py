@@ -20,6 +20,7 @@ def process_chunk(chunk):
     chunk['expiry_dt'] = chunk.apply(calc_expiry, axis=1)
     chunk['calculated_expiry'] = chunk['expiry_dt'].dt.strftime('%d/%m/%Y').fillna("-")
     return chunk
+    pass
 
 if __name__ != "__main__":
     import __main__
