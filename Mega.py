@@ -5,8 +5,8 @@ from tkinter import filedialog, messagebox
 from datetime import datetime
 import multiprocessing as mp
 import threading
+import sys
 
-# --- MULTIPROCESSING: Έξω από την κλάση ---
 def process_chunk(chunk):
     """Αυτή η συνάρτηση τρέχει ταυτόχρονα σε κάθε πυρήνα της CPU"""
     def calc_expiry(row):
@@ -21,6 +21,12 @@ def process_chunk(chunk):
     chunk['calculated_expiry'] = chunk['expiry_dt'].dt.strftime('%d/%m/%Y').fillna("-")
     return chunk
 
+if __name__ != "__main__":
+    import __main__
+    __main__.process_chunk = process_chunk
+
+   
+
 class MultiSelectWindow(ctk.CTkToplevel):
     def __init__(self, parent, title, options, selected_set, callback, is_package=False):
         super().__init__(parent)
@@ -32,22 +38,18 @@ class MultiSelectWindow(ctk.CTkToplevel):
         self.callback = callback
         self.checkboxes = []
 
-        # Κεντρικό Panel Ελέγχου
         ctrl_frame = ctk.CTkFrame(self)
         ctrl_frame.pack(fill="x", padx=10, pady=5)
 
-        # 1. Βασικά Κουμπιά
         top_btn_f = ctk.CTkFrame(ctrl_frame, fg_color="transparent")
         top_btn_f.pack(fill="x", pady=5)
         ctk.CTkButton(top_btn_f, text="✅ Όλα", command=self.select_all, width=100).pack(side="left", padx=5, expand=True)
         ctk.CTkButton(top_btn_f, text="❌ Καθαρισμός", command=self.deselect_all, fg_color="firebrick", width=100).pack(side="left", padx=5, expand=True)
 
-        # 2. Smart Filters (Αυτό που ζήτησες)
         if is_package:
             smart_f = ctk.CTkFrame(ctrl_frame)
             smart_f.pack(fill="x", padx=5, pady=5)
             
-            # Γραμμή Επιλογής (+)
             ctk.CTkLabel(smart_f, text="Προσθήκη (+):", font=("Arial", 11, "bold")).grid(row=0, column=0, padx=5, pady=2)
             tags = [("BLUE", "#3b8ed0", "blue"), ("YELLOW", "#f1c40f", "yellow"), ("HOME", "#2ecc71", "home"), ("BUS", "#9b59b6", "business")]
             for i, (txt, clr, kw) in enumerate(tags):
@@ -55,7 +57,6 @@ class MultiSelectWindow(ctk.CTkToplevel):
                                     width=80, height=24, command=lambda k=kw: self.mass_toggle(k, True))
                 btn.grid(row=0, column=i+1, padx=2, pady=2)
 
-            # Γραμμή Αφαίρεσης (-)
             ctk.CTkLabel(smart_f, text="Αφαίρεση (-):", font=("Arial", 11, "bold")).grid(row=1, column=0, padx=5, pady=2)
             for i, (txt, clr, kw) in enumerate(tags):
                 btn = ctk.CTkButton(smart_f, text=txt, fg_color="#444", border_width=1, border_color=clr,
@@ -130,7 +131,6 @@ class MegaEnergyCRM(ctk.CTk):
 
         ctk.CTkLabel(self.sidebar, text="MEGA ENERGY", font=("Arial Black", 26), text_color="#3b8ed0").pack(pady=(15, 5))
         
-        # Αλλαγή command για Threading
         self.btn_load = ctk.CTkButton(self.sidebar, text="📂 1. Φόρτωση Excel", command=self.start_load_thread, height=45)
         self.btn_load.pack(pady=10, padx=10, fill="x")
 
@@ -174,7 +174,6 @@ class MegaEnergyCRM(ctk.CTk):
             cb.pack(pady=3, padx=20, anchor="w")
             self.show_vars[col_name] = var
 
-        #Container
         self.main_container = ctk.CTkFrame(self, fg_color="transparent")
         self.main_container.pack(side="right", fill="both", expand=True, padx=20, pady=20)
         
@@ -215,7 +214,6 @@ class MegaEnergyCRM(ctk.CTk):
             self.btn_load.configure(state="disabled", text="⏳ Επεξεργασία...")
             self.status_label.configure(text="Εκκίνηση επεξεργασίας σε πολλαπλούς πυρήνες...", text_color="orange")
             
-            # Τρέχουμε τη φόρτωση σε background thread
             thread = threading.Thread(target=self.threaded_load, args=(path,))
             thread.daemon = True
             thread.start()
@@ -242,7 +240,6 @@ class MegaEnergyCRM(ctk.CTk):
                     processed_chunks = pool.map(process_chunk, chunks)
                 final_df = pd.concat(processed_chunks, ignore_index=True)
 
-            # Επιστροφή στο Main Thread για ενημέρωση του GUI
             self.after(0, lambda: self.finalize_load(final_df))
             
         except Exception as e:
