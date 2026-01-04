@@ -25,8 +25,6 @@ if __name__ != "__main__":
     import __main__
     __main__.process_chunk = process_chunk
 
-   
-
 class MultiSelectWindow(ctk.CTkToplevel):
     def __init__(self, parent, title, options, selected_set, callback, is_package=False):
         super().__init__(parent)
@@ -107,7 +105,7 @@ class MegaEnergyCRM(ctk.CTk):
         super().__init__()
         self.title("MEGA ENERGY CRM")
         self.geometry("1450x900")
-        ctk.CTkLabel(self, text="Version 1.0.1").pack()
+        ctk.CTkLabel(self, text="Version 1.0.2").pack()
         
         self.df = None
         self.filtered_df = pd.DataFrame()
@@ -377,5 +375,14 @@ class MegaEnergyCRM(ctk.CTk):
         self.clipboard_clear(); self.clipboard_append(text)
         self.status_label.configure(text=f"✅ Αντιγράφηκε: {text}", text_color="#27ae60")
 
-app = MegaEnergyCRM()
-app.mainloop()
+if __name__ == "__main__":
+    # Αυτό εμποδίζει τους "εργάτες" του Excel να ανοίξουν δικό τους παράθυρο
+    mp.freeze_support()
+    
+    # Ρυθμίσεις εμφάνισης (πρέπει να είναι μέσα στο if __name__)
+    ctk.set_appearance_mode("dark")
+    ctk.set_default_color_theme("dark-blue")
+
+    # Δημιουργία και εκτέλεση της εφαρμογής
+    app = MegaEnergyCRM()
+    app.mainloop()
