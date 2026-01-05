@@ -91,7 +91,7 @@ class MegaEnergyCRM(ctk.CTk):
         super().__init__()
         self.title("MEGA ENERGY CRM")
         self.geometry("1450x900")
-        ctk.CTkLabel(self, text="Version 1.1.2").pack() # Ενημερωμένη έκδοση
+        ctk.CTkLabel(self, text="Version 1.2.0").pack() # Ενημερωμένη έκδοση
         ctk.set_appearance_mode("dark")  # Επιλογές: "dark", "light", "system"
         ctk.set_default_color_theme("dark-blue")  # Επιλογές: "blue", "green", "dark-blue"
         
@@ -272,11 +272,37 @@ class MegaEnergyCRM(ctk.CTk):
                 if c > 2: c = 0; r += 1
 
     def export_to_excel(self):
-        if self.filtered_df.empty: return
-        path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel Files", "*.xlsx")])
-        if path:
-            self.filtered_df.to_excel(path, index=False)
-            messagebox.showinfo("Success", "Η εξαγωγή ολοκληρώθηκε!")
+        try:
+            if self.filtered_df is None or self.filtered_df.empty:
+                messagebox.showwarning("Προσοχή", "Δεν υπάρχουν δεδομένα!", parent=self)
+                return
+
+            cols_to_show = [
+                "Όνομα", 
+                "Επώνυμο", 
+                "Τηλέφωνο", 
+                "Πακέτο", 
+                "Ημ. Δημιουργίας Συμβολαίου",
+                "calculated_expiry"
+            ]
+
+            existing_cols = [c for c in cols_to_show if c in self.filtered_df.columns]
+
+            path = filedialog.asksaveasfilename(
+                parent=self,
+                defaultextension=".xlsx",
+                filetypes=[("Excel Files", "*.xlsx")],
+                title="Εξαγωγή Αποτελεσμάτων"
+            )
+
+            if path:
+                df_to_export = self.filtered_df[existing_cols].copy()
+                
+                df_to_export.to_excel(path, index=False)
+                messagebox.showinfo("Success", f"Εξήχθησαν {len(existing_cols)} στήλες επιτυχώς!", parent=self)
+                
+        except Exception as e:
+            messagebox.showerror("Error", f"Σφάλμα: {str(e)}", parent=self)
 
     def render_page(self):
         for widget in self.results_area.winfo_children(): 
