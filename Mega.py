@@ -36,8 +36,6 @@ class MultiSelectWindow(ctk.CTkToplevel):
         self.title(title)
         self.geometry("500x750")
         self.attributes("-topmost", True)
-        ctk.set_appearance_mode("dark")  # Επιλογές: "dark", "light", "system"
-        ctk.set_default_color_theme("dark-blue")  # Επιλογές: "blue", "green", "dark-blue"
         self.selected_set = selected_set
         self.callback = callback
         self.checkboxes = []
@@ -93,7 +91,9 @@ class MegaEnergyCRM(ctk.CTk):
         super().__init__()
         self.title("MEGA ENERGY CRM")
         self.geometry("1450x900")
-        ctk.CTkLabel(self, text="Version 1.1.1").pack() # Ενημερωμένη έκδοση
+        ctk.CTkLabel(self, text="Version 1.1.2").pack() # Ενημερωμένη έκδοση
+        ctk.set_appearance_mode("dark")  # Επιλογές: "dark", "light", "system"
+        ctk.set_default_color_theme("dark-blue")  # Επιλογές: "blue", "green", "dark-blue"
         
         self.df = None
         self.filtered_df = pd.DataFrame()
