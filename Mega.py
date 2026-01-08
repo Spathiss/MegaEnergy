@@ -6,6 +6,9 @@ from datetime import datetime
 import threading
 import sys
 import os
+import warnings
+
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 try:
     from pathos.multiprocessing import ProcessingPool as Pool
