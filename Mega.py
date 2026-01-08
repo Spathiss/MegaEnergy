@@ -6,11 +6,6 @@ from datetime import datetime
 import threading
 import sys
 import os
-import warnings
-
-warnings.filterwarnings("ignore") 
-# Αναγκάζει την Python στα Windows να χρησιμοποιεί UTF-8 για τα πάντα
-os.environ["PYTHONUTF8"] = "1"
 
 try:
     from pathos.multiprocessing import ProcessingPool as Pool
