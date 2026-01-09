@@ -91,7 +91,7 @@ class MegaEnergyCRM(ctk.CTk):
         super().__init__()
         self.title("MEGA ENERGY CRM")
         self.geometry("1450x900")
-        ctk.CTkLabel(self, text="Version 1.2.1").pack() # Ενημερωμένη έκδοση
+        ctk.CTkLabel(self, text="Version 1.2.2").pack() # Ενημερωμένη έκδοση
         ctk.set_appearance_mode("dark")  # Επιλογές: "dark", "light", "system"
         ctk.set_default_color_theme("dark-blue")  # Επιλογές: "blue", "green", "dark-blue"
         
@@ -349,3 +349,4 @@ if __name__ == "__main__":
     
     app = MegaEnergyCRM()
     app.mainloop()
+
