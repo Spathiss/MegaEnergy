@@ -274,35 +274,38 @@ class MegaEnergyCRM(ctk.CTk):
     def export_to_excel(self):
         try:
             if self.filtered_df is None or self.filtered_df.empty:
-                messagebox.showwarning("Προσοχή", "Δεν υπάρχουν δεδομένα!", parent=self)
+                messagebox.showwarning("Προσοχή", "Δεν υπάρχουν δεδομένα για εξαγωγή!", parent=self)
                 return
 
-            cols_to_show = [
-                "Όνομα", 
-                "Επώνυμο", 
-                "Τηλέφωνο", 
-                "Πακέτο", 
-                "Ημ. Δημιουργίας Συμβολαίου",
-                "calculated_expiry"
-            ]
+            selected_columns = []
+            if "Επωνυμία / Ονοματεπώνυμο" in self.filtered_df.columns:
+                selected_columns.append("Επωνυμία / Ονοματεπώνυμο")
 
-            existing_cols = [c for c in cols_to_show if c in self.filtered_df.columns]
+            for col_name, var in self.show_vars.items():
+                if var.get():  # Αν είναι True (τικαρισμένο)
+                    if col_name in self.filtered_df.columns:
+                        selected_columns.append(col_name)
+
+            selected_columns = list(dict.fromkeys(selected_columns))
+
+            if len(selected_columns) == 0:
+                messagebox.showwarning("Προσοχή", "Δεν έχετε επιλέξει καμία στήλη!", parent=self)
+                return
 
             path = filedialog.asksaveasfilename(
                 parent=self,
                 defaultextension=".xlsx",
                 filetypes=[("Excel Files", "*.xlsx")],
-                title="Εξαγωγή Αποτελεσμάτων"
+                title="Εξαγωγή Φιλτραρισμένων Δεδομένων"
             )
 
             if path:
-                df_to_export = self.filtered_df[existing_cols].copy()
-                
-                df_to_export.to_excel(path, index=False)
-                messagebox.showinfo("Success", f"Εξήχθησαν {len(existing_cols)} στήλες επιτυχώς!", parent=self)
-                
+                df_to_export = self.filtered_df[selected_columns].copy()
+                df_to_export.to_excel(path, index=False, engine='openpyxl')
+                messagebox.showinfo("Επιτυχία", f"Η εξαγωγή ολοκληρώθηκε με {len(selected_columns)} στήλες!", parent=self)
+
         except Exception as e:
-            messagebox.showerror("Error", f"Σφάλμα: {str(e)}", parent=self)
+            messagebox.showerror("Σφάλμα", f"Αποτυχία κατά την εξαγωγή: {str(e)}", parent=self)
 
     def render_page(self):
         for widget in self.results_area.winfo_children(): 
